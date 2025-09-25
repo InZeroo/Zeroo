@@ -1,0 +1,2 @@
+resources/movefile/movefile.exe
+resources/movefile/Version.txt

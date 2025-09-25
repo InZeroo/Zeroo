@@ -1,0 +1,6 @@
+Optimizar.cmd
+version.txt
+
+resources/Version.txt
+
+

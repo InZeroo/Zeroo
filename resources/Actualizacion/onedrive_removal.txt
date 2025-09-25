@@ -1,0 +1,3 @@
+resources/onedrive_removal/del_onedrive.cmd
+resources/onedrive_removal/diruse.exe
+resources/onedrive_removal/Versión.txt

@@ -1,0 +1,5 @@
+resources/oem/GUID.cmd
+resources/oem/programs_to_target_by_GUID.txt
+resources/oem/programs_to_target_by_name.txt
+resources/oem/toolbars_BHOs_to_target_by_GUID.txt 
+resources/oem/Version.txt

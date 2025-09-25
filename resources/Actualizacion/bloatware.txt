@@ -1,0 +1,6 @@
+resources/bloatware/metro_3rd_party_modern_apps_to_target_by_name.ps1
+resources/bloatware/metro_app.cmd
+resources/bloatware/metro_Microsoft_modern_apps_to_target_by_name.ps1
+resources/bloatware/Version.txt
+
+
