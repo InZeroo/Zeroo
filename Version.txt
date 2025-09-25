@@ -1,0 +1,5 @@
+4.1 Se añade la optimizacion de sonido
+4.1 Actualizacion de funciones
+4.2 Se repara el codigo Maximo_rendimiento.ps1
+4.3 Actualización de funciones
+4.4 Actualización Online
