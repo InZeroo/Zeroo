@@ -50,11 +50,22 @@
 :: 3.1 Se mejora la deteccion de laptop o pc de mesa
 :: 3.2 Configuracion modo tecnico | si la variable MODO esta configurada en tec este volvera a escribir el dxdiag de pero si esta en user solo lo hara una vez
 :: 3.3 Se añade reparacion de WMIC  en caso de que este no funcione ya que es indispensable para las optimizaciones
+:: 3.4 Se añade acutalizacion online 
+:: 3.5 Actualizacion online de script padre 
 ::========================================================================================================================================
 ::========================================================================================================================================
+
+:: Crea una variable para detectar nuevamente los datos del computador 
+
 ::set "MODO=tec"
 set "MODO=user"
+
+::-------------------------------------
+
+set "Actualizar=yes"
+
 ::========================================================================================================================================
+
 
 call resources\Funciones\Logo3.bat
 @echo off
@@ -478,4 +489,187 @@ if %errorlevel% neq 0 (
     exit
 ) 
 
+::========================================================================================================================================
 
+if %Actualizar%==yes (
+	if %NETWORK_AVAILABLE%==yes (
+	
+		setlocal enabledelayedexpansion
+	
+	    cls
+		
+        :: URLs y rutas
+		set "BASE_URL=https://raw.githubusercontent.com/InZeroo/ZerooFunciones/refs/heads/main/Funciones"
+        set "REMOTE_VER_URL=!BASE_URL!/Version.txt"
+        set "LOCAL_VER_FILE=resources\Funciones\Version.txt"
+		set "OUTDIR=!TEMP!\temp_update_Zeroofunciones"
+		set "ARCHIVOS=consola.cmd log.bat Logo.bat Logo2.bat Logo3.bat Suscribete.bat Version.bat Version.txt bin\setacl.exe bin\smartctl.exe bin\WMIC.exe lib\DeleteTask.bat lib\DesactivarTask.bat lib\log.bat lib\RegAdd.bat lib\RegDel.bat lib\RegQuery.bat lib\SCError1.bat lib\SCError2.bat lib\SCQuery.bat lib\SCQuery2.bat lib\SCQuery3.bat lib\SCServicesDel.bat lib\SCServicesDown.bat lib\SCServicesUp.bat"
+		set "DESTDIR=!RUTA!resources\Funciones"
+
+		:: Leer versión remota directamente online con PowerShell
+		for /f "usebackq delims=" %%i in (`powershell -NoLogo -NoProfile -Command "(Invoke-WebRequest -Uri '!REMOTE_VER_URL!').Content"`) do (
+			set "REMOTE_VER=%%i"
+		)
+		
+		:: Leer versión local 
+		if exist "!LOCAL_VER_FILE!" ( 
+			set /p LOCAL_VER=<"!LOCAL_VER_FILE!" 
+		) else ( 
+			echo no se detecto version
+		)
+		
+        :: Convertir versiones (quita el punto para comparar como número)
+        set "REMOTE_NUM=!REMOTE_VER:.=!"
+        set "LOCAL_NUM=!LOCAL_VER:.=!"
+		
+		::comparar
+		::echo !REMOTE_NUM!
+		::echo !LOCAL_NUM!
+		::pause
+		
+		if !REMOTE_NUM! GTR !LOCAL_NUM! (
+			echo Actualización disponible. Instalando...
+			
+			if exist "!OUTDIR!" rd /s /q "!OUTDIR!"
+			mkdir "!OUTDIR!"
+			mkdir "!OUTDIR!\bin"
+			mkdir "!OUTDIR!\lib"
+			if not exist "!DESTDIR!\lib" mkdir "!DESTDIR!\lib"
+			if not exist "!DESTDIR!\bin" mkdir "!DESTDIR!\bin"
+			
+			for %%A in (!ARCHIVOS!) do (
+				echo Descargando %%A ...
+				if "!hasCurl!"=="1" (
+					curl -L "!BASE_URL!/%%A" --output "!OUTDIR!\%%A"
+				) else (
+					powershell -ExecutionPolicy Bypass -Command ^
+					"$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '!BASE_URL!/%%A' -OutFile '!OUTDIR!\%%A'"
+				)
+			)
+			
+			echo === Reemplazando archivos en resources\Funciones ===
+			for %%A in (!ARCHIVOS!) do (
+				if exist "!OUTDIR!\%%A" (
+					echo Reemplazando %%A ...
+					move /Y "!OUTDIR!\%%A" "!DESTDIR!\%%A" >nul
+				) else (
+					echo %%A no se encontró en !OUTDIR!, no se reemplazó.
+				)
+			)
+
+
+            :: Limpiar
+            rd /s /q "%TEMP_DIR%"
+
+            echo Actualización completada.
+            echo Debes volver a ejecutar el script.
+            pause
+            exit
+        ) else (
+            echo última versión.
+        )
+		
+		endlocal
+	)
+)
+
+::========================================================================================================================================
+
+if %Actualizar%==yes (
+	if %NETWORK_AVAILABLE%==yes (
+	
+		setlocal enabledelayedexpansion
+	
+		::URL y rutas
+		set "REMOTE_VER_URL=!URL_SCRIPT!/resources/Version.txt"
+        set "LOCAL_VER_FILE=resources\Version.txt"
+		set "OUTDIR=!TEMP!\temp_update_Zeroo_script"
+		set "DESTDIR=!RUTA!resources"
+
+		:: Leer versión remota directamente online con PowerShell
+		for /f "usebackq delims=" %%i in (`powershell -NoLogo -NoProfile -Command "(Invoke-WebRequest -Uri '!REMOTE_VER_URL!').Content"`) do (
+			set "REMOTE_VER=%%i"
+		)
+		
+		:: Leer versión local 
+		if exist "!LOCAL_VER_FILE!" ( 
+			set /p LOCAL_VER=<"!LOCAL_VER_FILE!" 
+		) else ( 
+			echo no se detecto version
+		)
+		
+        :: Convertir versiones (quita el punto para comparar como número)
+        set "REMOTE_NUM=!REMOTE_VER:.=!"
+        set "LOCAL_NUM=!LOCAL_VER:.=!"
+		
+		if !REMOTE_NUM! GTR !LOCAL_NUM! (
+			echo Actualización disponible...
+			echo Leyendo archivos..
+			
+			if exist "!OUTDIR!" rd /s /q "!OUTDIR!"
+
+			for /d %%A in ("%RUTA%\resources\*") do ( set DESTDIR=%%A
+				if /i not "%%~nxA"=="Funciones" if /i not "%%~nxA"=="log" (
+					if exist "!DESTDIR!\Version.txt" (
+						set "LOCAL_VER_FILE="
+						for /f "usebackq delims=" %%B in ("!DESTDIR!\Version.txt") do (
+							set "LOCAL_VER_FILE=%%B"
+						)
+						
+						set "DESTDIR=!DESTDIR:%BASE%\resources\=!"
+						set "REMOTE_VER_URL=!URL_SCRIPT!/!DESTDIR!/resources/Version.txt"
+						
+						for /f "usebackq delims=" %%i in (`powershell -NoLogo -NoProfile -Command "(Invoke-WebRequest -Uri '!REMOTE_VER_URL!').Content"`) do (
+							set "REMOTE_VER=%%i"
+						)
+					
+						:: Quitar todos los puntos
+						set "LOCAL_NUM=!LOCAL_VER_FILE:.=!"
+						set "REMOTE_NUM=!REMOTE_VER:.=!"
+						
+						if !REMOTE_NUM! GTR !LOCAL_NUM! (
+						
+							if exist "!RUTA!\resources\Actualizacion\!DESTDIR!.txt" (
+								set /p ARCHIVOS=<"!RUTA!\resources\Actualizacion\!DESTDIR!.txt" 
+							) else ( 
+								echo no se detecto version
+							)
+							
+							mkdir "!OUTDIR!"
+							mkdir "!OUTDIR!\resources"
+							mkdir "!OUTDIR!\resources\!DESTDIR!"
+						
+							for %%A in (!ARCHIVOS!) do (
+								echo Descargando %%A ...
+								if "!hasCurl!"=="1" (
+									curl -L "!URL_SCRIPT!/resources/!DESTDIR!/%%A" --output "!OUTDIR!\resources\!DESTDIR!\%%A"
+								) else (
+									powershell -ExecutionPolicy Bypass -Command ^
+									"$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '!URL_SCRIPT!/resources/!DESTDIR!/%%A' -OutFile '!OUTDIR!\resources\!DESTDIR!\%%A'"
+								)
+							)
+						
+							echo === Reemplazando archivos en resources\Funciones ===
+							for %%A in (!ARCHIVOS!) do (
+								if exist "!OUTDIR!\resources\!DESTDIR!\%%A" (
+									echo Reemplazando %%A ...
+									move /Y "!OUTDIR!\resources\!DESTDIR!\%%A" "!RUTA!\resources\!DESTDIR!\%%A" >nul
+								) else (
+									echo %%A no se encontró en !OUTDIR!, no se reemplazó.
+								)
+							)
+						)
+					)
+				)
+			)
+			:: Limpiar
+			rd /s /q "%TEMP_DIR%"
+	
+	        echo Actualización completada.
+            echo Debes volver a ejecutar el script.
+            pause
+            exit
+		)	
+	)
+	endlocal
+)
